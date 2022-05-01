@@ -47,52 +47,14 @@ def test_indexing():
     assert set1[:] is not set1
     assert set1.copy() is not set1
 
-    assert set1[[1, 2]] == OrderedSet(["b", "r"])
     assert set1[1:3] == OrderedSet(["b", "r"])
-    assert set1.index("b") == 1
-    assert set1.index(["b", "r"]) == [1, 2]
-    with pytest.raises(KeyError):
-        set1.index("br")
-
-
-class FancyIndexTester:
-    """
-    Make sure we can index by a NumPy ndarray, without having to import
-    NumPy.
-    """
-
-    def __init__(self, indices):
-        self.indices = indices
-
-    def __iter__(self):
-        return iter(self.indices)
-
-    def __index__(self):
-        raise TypeError("NumPy arrays have weird __index__ methods")
-
-    def __eq__(self, other):
-        # Emulate NumPy being fussy about the == operator
-        raise TypeError
-
-
-def test_fancy_index_class():
-    set1 = OrderedSet("abracadabra")
-    indexer = FancyIndexTester([1, 0, 4, 3, 0, 2])
-    assert "".join(set1[indexer]) == "badcar"
-
-
-def test_pandas_compat():
-    set1 = OrderedSet("abracadabra")
-    assert set1.get_loc("b") == 1
-    assert set1.get_indexer(["b", "r"]) == [1, 2]
-
-
-def test_tuples():
-    set1 = OrderedSet()
-    tup = ("tuple", 1)
-    set1.add(tup)
-    assert set1.index(tup) == 0
-    assert set1[0] == tup
+    assert set1[2] == "r"
+    assert set1[1:2] == OrderedSet(["b"])
+    assert set1[::2] == OrderedSet(["a", "r", "d"])
+    assert set1[1::2] == OrderedSet(["b", "c"])
+    assert set1[100:500] is None
+    with pytest.raises(IndexError):
+        _ = set1[100500]
 
 
 def test_remove():
@@ -102,13 +64,6 @@ def test_remove():
     set1.remove("b")
 
     assert set1 == OrderedSet("rcd")
-    assert set1[0] == "r"
-    assert set1[1] == "c"
-    assert set1[2] == "d"
-
-    assert set1.index("r") == 0
-    assert set1.index("c") == 1
-    assert set1.index("d") == 2
 
     assert "a" not in set1
     assert "b" not in set1
@@ -137,27 +92,31 @@ def test_clear():
 
 def test_update():
     set1 = OrderedSet("abcd")
-    result = set1.update("efgh")
+    assert set1.update("efgh") is None
 
-    assert result == 7
     assert len(set1) == 8
     assert "".join(set1) == "abcdefgh"
 
     set2 = OrderedSet("abcd")
-    result = set2.update("cdef")
-    assert result == 5
+    assert set2.update("cdef") is None
     assert len(set2) == 6
     assert "".join(set2) == "abcdef"
 
 
 def test_pop():
-    set1 = OrderedSet("ab")
-    elem = set1.pop()
+    set1 = OrderedSet("abdc")
 
-    assert elem == "b"
     elem = set1.pop()
-
     assert elem == "a"
+
+    elem = set1.pop()
+    assert elem == "b"
+
+    elem = set1.pop()
+    assert elem == "d"
+
+    elem = set1.pop()
+    assert elem == "c"
 
     pytest.raises(KeyError, set1.pop)
 
